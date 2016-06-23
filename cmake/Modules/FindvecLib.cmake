@@ -10,13 +10,16 @@ if(NOT APPLE)
   return()
 endif()
 
+execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE sdk_path)
+string(REPLACE "\n" "" sdk_path ${sdk_path})
 set(__veclib_include_suffix "Frameworks/vecLib.framework/Versions/Current/Headers")
 
-find_path(vecLib_INCLUDE_DIR vecLib.h
-          DOC "vecLib include directory"
-          PATHS /System/Library/${__veclib_include_suffix}
-                /System/Library/Frameworks/Accelerate.framework/Versions/Current/${__veclib_include_suffix}
-                /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers/)
+find_path(vecLib_INCLUDE_DIR cblas.h
+          DOC "cblas include directory"
+          PATHS
+                #/System/Library/${__veclib_include_suffix}
+                #/System/Library/Frameworks/Accelerate.framework/Versions/Current/${__veclib_include_suffix}
+                ${sdk_path}/System/Library/Frameworks/Accelerate.framework/Versions/Current/${__veclib_include_suffix})
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(vecLib DEFAULT_MSG vecLib_INCLUDE_DIR)
