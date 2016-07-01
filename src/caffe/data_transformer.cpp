@@ -442,7 +442,7 @@ void DataTransformer<Dtype>::LabelmapTransform(const cv::Mat& cv_img,
   cv::Mat cv_cropped_img = cv_img;
   if (crop_size) {
     CHECK_EQ(crop_size, height);
-    
+
     cv::Rect roi(w_off, h_off, crop_size, crop_size);
     cv_cropped_img = cv_img(roi);
   } else {
@@ -464,7 +464,8 @@ void DataTransformer<Dtype>::LabelmapTransform(const cv::Mat& cv_img,
           top_index = (c * height + h) * width + w;
         }
         Dtype pixel = static_cast<Dtype>(ptr[img_index++]);
-        transformed_data[top_index] = pixel;
+        // opencv does anti-alias in image
+        transformed_data[top_index] = pixel / Dtype(255);
       }
     }
   }

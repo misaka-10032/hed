@@ -70,19 +70,19 @@ void ImageLabelmapDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& b
   cv::Mat cv_gt = ReadImageToCVMat(root_folder + lines_[lines_id_].second,
                                     new_height, new_width, 0);
 
-  //const int channels = cv_img.channels(); 
-  const int height = cv_img.rows; 
-  const int width = cv_img.cols; 
-   
-  const int gt_channels = cv_gt.channels(); 
-  const int gt_height = cv_gt.rows; 
-  const int gt_width = cv_gt.cols; 
- 
-  CHECK((height == gt_height) && (width == gt_width)) << "groundtruth size != image size"; 
+  //const int channels = cv_img.channels();
+  const int height = cv_img.rows;
+  const int width = cv_img.cols;
+
+  const int gt_channels = cv_gt.channels();
+  const int gt_height = cv_gt.rows;
+  const int gt_width = cv_gt.cols;
+
+  CHECK((height == gt_height) && (width == gt_width)) << "groundtruth size != image size";
   CHECK(gt_channels == 1) << "GT image channel number should be 1";
- 
+
   CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
-  
+
   if (new_height > 0 && new_width > 0) {
     cv::resize(cv_img, cv_img, cv::Size(new_width, new_height));
     cv::resize(cv_gt, cv_gt, cv::Size(new_width, new_height));
@@ -91,7 +91,7 @@ void ImageLabelmapDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& b
   // Use data_transformer to infer the expected blob shape from a cv_image.
   vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
   vector<int> top_shape_labelmap = this->data_transformer_->InferBlobShape(cv_gt);
-  
+
   this->transformed_data_.Reshape(top_shape);
   this->transformed_labelmap_.Reshape(top_shape_labelmap);
   // Reshape prefetch_data and top[0] according to the batch_size.
@@ -150,13 +150,13 @@ void ImageLabelmapDataLayer<Dtype>::load_batch(LabelmapBatch<Dtype>* batch) {
   // Use data_transformer to infer the expected blob shape from a cv_img.
   vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
   vector<int> top_shape_labelmap = this->data_transformer_->InferBlobShape(cv_gt);
-  
+
   this->transformed_data_.Reshape(top_shape);
   this->transformed_labelmap_.Reshape(top_shape_labelmap);
   // Reshape prefetch_data and top[0] according to the batch_size.
   top_shape[0] = batch_size;
   top_shape_labelmap[0] = batch_size;
-  
+
   batch->data_.Reshape(top_shape);
   batch->labelmap_.Reshape(top_shape_labelmap);
 
@@ -184,7 +184,7 @@ void ImageLabelmapDataLayer<Dtype>::load_batch(LabelmapBatch<Dtype>* batch) {
 
     CHECK((height == gt_height) && (width == gt_width)) << "GT image size should be equal to true image size";
     CHECK(gt_channels == 1) << "GT image channel number should be 1";
- 
+
     if (new_height > 0 && new_width > 0) {
         cv::resize(cv_img, cv_img, cv::Size(new_width, new_height));
         cv::resize(cv_gt, cv_gt, cv::Size(new_width, new_height), 0, 0, cv::INTER_LINEAR);
@@ -207,17 +207,19 @@ void ImageLabelmapDataLayer<Dtype>::load_batch(LabelmapBatch<Dtype>* batch) {
     int w_off = 0;
     bool do_mirror = false;
     this->data_transformer_->LocTransform(cv_img, &(this->transformed_data_), h_off, w_off, do_mirror);
-    
-    cv::Mat encoded_gt;
-    //regression
-    encoded_gt = cv_gt/255;
-    //[***Cautions***]
-    //One small trick leveraging opencv roundoff feature for **consensus sampling** in Holistically-Nested Edge Detection paper.
-    //For general binary edge maps this is okay
-    //For 5-subject aggregated edge maps (BSDS), this will abandon weak edge points labeled by only two or less labelers.
 
+    cv::Mat encoded_gt;
+    ////regression
+    //encoded_gt = cv_gt/255;
+    ////[***Cautions***]
+    ////One small trick leveraging opencv roundoff feature for **consensus sampling** in Holistically-Nested Edge Detection paper.
+    ////For general binary edge maps this is okay
+    ////For 5-subject aggregated edge maps (BSDS), this will abandon weak edge points labeled by only two or less labelers.
+
+    // I would like it to /255 in transform_labelmap_, which preserves more precision
+    encoded_gt = cv_gt;
     this->data_transformer_->LabelmapTransform(encoded_gt, &(this->transformed_labelmap_), h_off, w_off, do_mirror);
-    
+
     trans_time += timer.MicroSeconds();
 
     // go to the next iter

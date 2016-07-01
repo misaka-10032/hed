@@ -1,0 +1,10 @@
+*.caffemodel
+*.solverstate
+*.npy
+*.qsub
+solve.qsub.*
+*.log
+
+results*
+scripts
+data

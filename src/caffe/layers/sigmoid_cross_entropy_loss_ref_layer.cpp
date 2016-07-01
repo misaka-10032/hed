@@ -9,7 +9,7 @@
 namespace caffe {
 
 template <typename Dtype>
-void SigmoidCrossEntropyLossLayer<Dtype>::LayerSetUp(
+void SigmoidCrossEntropyLossRefLayer<Dtype>::LayerSetUp(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   LossLayer<Dtype>::LayerSetUp(bottom, top);
   sigmoid_bottom_vec_.clear();
@@ -20,24 +20,16 @@ void SigmoidCrossEntropyLossLayer<Dtype>::LayerSetUp(
 }
 
 template <typename Dtype>
-void SigmoidCrossEntropyLossLayer<Dtype>::Reshape(
+void SigmoidCrossEntropyLossRefLayer<Dtype>::Reshape(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   LossLayer<Dtype>::Reshape(bottom, top);
   CHECK_EQ(bottom[0]->count(), bottom[1]->count()) <<
       "SIGMOID_CROSS_ENTROPY_LOSS layer inputs must have the same count.";
   sigmoid_layer_->Reshape(sigmoid_bottom_vec_, sigmoid_top_vec_);
-  loss_data_.ReshapeLike(*bottom[0]);
-
-  const int bs = bottom[0]->num();
-  vector<int> shape(1, bs);
-  loss_pw_.Reshape(shape);
-  loss_nw_.Reshape(shape);
-  caffe_set(bs, Dtype(0), loss_pw_.mutable_cpu_data());
-  caffe_set(bs, Dtype(0), loss_nw_.mutable_cpu_data());
 }
 
 template <typename Dtype>
-void SigmoidCrossEntropyLossLayer<Dtype>::Forward_cpu(
+void SigmoidCrossEntropyLossRefLayer<Dtype>::Forward_cpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   // The forward pass computes the sigmoid outputs.
   sigmoid_bottom_vec_[0] = bottom[0];
@@ -80,7 +72,7 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Forward_cpu(
 }
 
 template <typename Dtype>
-void SigmoidCrossEntropyLossLayer<Dtype>::Backward_cpu(
+void SigmoidCrossEntropyLossRefLayer<Dtype>::Backward_cpu(
     const vector<Blob<Dtype>*>& top, const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
   if (propagate_down[1]) {
@@ -104,7 +96,7 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Backward_cpu(
     	count_neg = 0;
     	for (int j = 0; j < dim; j ++) {
            	if (target[i*dim+j] == 1) {
-                	count_pos++;
+                	count_pos ++;
         	}
         	else if (target[i*dim+j] == 0) {
                 	count_neg ++;
@@ -119,16 +111,16 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Backward_cpu(
         	}
      	}
     }
-    const Dtype loss_weight = top[0]->cpu_diff()[0];
+    const Dtype loss_weight = top [0]->cpu_diff()[0];
     caffe_scal(count, loss_weight / num, bottom_diff);
   }
 }
 
 #ifdef CPU_ONLY
-STUB_GPU(SigmoidCrossEntropyLossLayer);
+STUB_GPU(SigmoidCrossEntropyLossRefLayer);
 #endif
 
-INSTANTIATE_CLASS(SigmoidCrossEntropyLossLayer);
-REGISTER_LAYER_CLASS(SigmoidCrossEntropyLoss);
+INSTANTIATE_CLASS(SigmoidCrossEntropyLossRefLayer);
+REGISTER_LAYER_CLASS(SigmoidCrossEntropyLossRef);
 
 }  // namespace caffe
